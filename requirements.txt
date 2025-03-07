@@ -8,3 +8,4 @@ scikit-learn==1.3.0         # (Optional) For machine learning models, if require
 gunicorn==21.2.0            # For deploying the Flask app in production
 googlemaps
 google-generativeai
+flask-cors
