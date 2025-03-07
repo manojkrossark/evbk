@@ -7,3 +7,4 @@ numpy==1.25.1               # Needed by statsmodels and general data manipulatio
 scikit-learn==1.3.0         # (Optional) For machine learning models, if required
 gunicorn==21.2.0            # For deploying the Flask app in production
 googlemaps
+google-generativeai
