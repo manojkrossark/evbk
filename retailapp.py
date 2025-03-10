@@ -74,6 +74,7 @@ def generate_ai_recommendation(user_location, station_data):
         stations_info = "\n".join([
             f"""{i+1}. {station['name']}
             - 📍 Location: {station['latitude']}, {station['longitude']}
+            - 🏠 Address: {station['address']}
             - 🚶‍♂️ User Distance: {round(haversine_distance(user_lat, user_lon, station['latitude'], station['longitude']), 1)} km
             - 💰 Price per kWh: ₹{station['price_per_kwh']}
             - 🚗 Estimated Travel Time: {round(station['travel_time'] / 60, 1)} min
@@ -81,7 +82,8 @@ def generate_ai_recommendation(user_location, station_data):
             - 🌤 Weather: {station['weather'].get("condition", "N/A")}, 
               Temp: {station['weather'].get("temperature", "N/A")}°C, 
               Wind: {station['weather'].get("wind_speed", "N/A")} km/h,
-              Humidity: {station['weather'].get("humidity", "N/A")}%"""
+              Humidity: {station['weather'].get("humidity", "N/A")}%
+            """
             for i, station in enumerate(station_data)
         ])
 
@@ -105,6 +107,7 @@ def generate_ai_recommendation(user_location, station_data):
               {{
                 "name": "<Best station name>",
                 "location": "<Latitude, Longitude>",
+                "address": "<Station Address>",
                 "user_distance_km": <Distance>,
                 "price_per_kwh": <Price>,
                 "estimated_cost_for_10kWh": <Cost>,
@@ -113,6 +116,7 @@ def generate_ai_recommendation(user_location, station_data):
               {{
                 "name": "<Second best station>",
                 "location": "<Latitude, Longitude>",
+                "address": "<Station Address>",
                 "user_distance_km": <Distance>,
                 "price_per_kwh": <Price>,
                 "estimated_cost_for_10kWh": <Cost>,
@@ -121,6 +125,7 @@ def generate_ai_recommendation(user_location, station_data):
               {{
                 "name": "<Third best station>",
                 "location": "<Latitude, Longitude>",
+                "address": "<Station Address>",
                 "user_distance_km": <Distance>,
                 "price_per_kwh": <Price>,
                 "estimated_cost_for_10kWh": <Cost>,
@@ -138,7 +143,7 @@ def generate_ai_recommendation(user_location, station_data):
             "important_note": "<Key considerations>"
           }}
         }}
-        ```
+        ``` 
         """
 
         # Generate AI response
@@ -171,6 +176,7 @@ def generate_ai_recommendation(user_location, station_data):
         print(f"Error generating AI recommendation: {e}")
         return {"error": str(e)}
 
+
 def analyze_best_times(latitude, longitude, station_location):
     """Analyze congestion at different times of the day to find the best slot."""
     best_time = None
@@ -201,12 +207,18 @@ def predict_best_station(latitude, longitude):
         if not places_result.get("results"):
             return None, "No charging stations found nearby"
         
+
+        
         station_data = []
         for place in places_result["results"]:
             lat, lon = place["geometry"]["location"].values()
             travel_time = get_traffic_time((latitude, longitude), (lat, lon)) or float('inf')
             weather = get_weather_conditions(lat, lon) or {}
             best_time, peak_hours = analyze_best_times(latitude, longitude, (lat, lon))
+            address = place.get("vicinity", None)  # Directly from API (faster)
+            if not address:
+                reverse_geocode = gmaps.reverse_geocode((lat, lon))
+                address = reverse_geocode[0]["formatted_address"] if reverse_geocode else "Address not found"
             station_data.append({
                 "station_id": place.get("place_id", "Unknown ID"),
                 "name": place.get("name", "Unknown Name"),
@@ -214,6 +226,7 @@ def predict_best_station(latitude, longitude):
                 "longitude": lon,
                 "travel_time": travel_time,
                 "weather": weather,
+                "address": address,
                 # "slots_available": 3,  # Placeholder
                 "price_per_kwh": round(7.5 + 1.5 * (travel_time / 600), 2),
                 "is_green_energy": bool(place.get("business_status") == "OPERATIONAL"),
@@ -236,12 +249,14 @@ def predict_best_station(latitude, longitude):
                 "location": f"{best_station['latitude']}, {best_station['longitude']}",
                 # "slots_available": best_station["slots_available"],
                 "price_per_kwh": best_station["price_per_kwh"],
+                "address": best_station["address"],
                 "is_green_energy": best_station["is_green_energy"]
             },
             "ai_recommendation": ai_recommendation,
             "alternative_station": {
                 "name": alternative_station["name"],
                 "distance_km": round(alternative_station["travel_time"] / 60, 1),
+                "address": alternative_station["address"],
                 "price_per_kwh": alternative_station["price_per_kwh"]
             } if alternative_station else None
         }, None
