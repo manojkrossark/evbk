@@ -64,6 +64,182 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     
     return R * c  # Distance in km
 
+# def generate_ai_recommendation_petrol(user_location, station_data):
+#     """Generate AI-powered recommendations for the top 3 petrol stations."""
+#     try:
+#         user_lat, user_lon = user_location
+
+#         stations_info = "\n".join([
+#             f"""{i+1}. {station['name']}
+#             - 📍 Location: {station['latitude']}, {station['longitude']}
+#             - 🏠 Address: {station['address']}
+#             - 🚶‍♂️ User Distance: {round(haversine_distance(user_lat, user_lon, station['latitude'], station['longitude']), 1)} km
+#             - ⛽ Fuel Price: ₹{station['fuel_price_per_litre']} per litre
+#             - 🚗 Estimated Travel Time: {round(station['travel_time'] / 60, 1)} min
+#             - ⚠️ Peak Hours: {', '.join(station['peak_hours'])}
+#             - 🌤 Weather: {station['weather'].get("condition", "N/A")}, 
+#               Temp: {station['weather'].get("temperature", "N/A")}°C, 
+#               Wind: {station['weather'].get("wind_speed", "N/A")} km/h,
+#               Humidity: {station['weather'].get("humidity", "N/A")}%
+#             """
+#             for i, station in enumerate(station_data)
+#         ])
+
+#         prompt = f"""
+#         Given real-time petrol station data and the user's location at ({user_lat}, {user_lon}),
+#         recommend the three best petrol stations for refueling.
+
+#         - ✅ Prioritize cost-effectiveness and convenience.
+#         - ❌ Avoid recommending heavily congested stations.
+#         - ⚠️ Consider fuel price, real-time weather, distance, and travel time.
+
+#         📊 Petrol Stations Data:
+#         {stations_info}
+
+#         **Return ONLY valid JSON**:
+#         ```json
+#         {{
+#           "recommendation": {{
+#             "top_3_stations": [
+#               {{
+#                 "name": "<Best station>",
+#                 "location": "<Latitude, Longitude>",
+#                 "address": "<Station Address>",
+#                 "user_distance_km": <Distance>,
+#                 "fuel_price_per_litre": <Price>,
+#                 "estimated_travel_time_min": <Time>
+#               }},
+#               {{
+#                 "name": "<Second best station>",
+#                 "location": "<Latitude, Longitude>",
+#                 "address": "<Station Address>",
+#                 "user_distance_km": <Distance>,
+#                 "fuel_price_per_litre": <Price>,
+#                 "estimated_travel_time_min": <Time>
+#               }},
+#               {{
+#                 "name": "<Third best station>",
+#                 "location": "<Latitude, Longitude>",
+#                 "address": "<Station Address>",
+#                 "user_distance_km": <Distance>,
+#                 "fuel_price_per_litre": <Price>,
+#                 "estimated_travel_time_min": <Time>
+#               }}
+#             ]
+#           }}
+#         }}
+#         ``` 
+#         """
+
+#         model = genai.GenerativeModel("gemini-1.5-flash")
+#         response = model.generate_content(prompt)
+#         ai_text = response.text.strip()
+
+#         if "```json" in ai_text:
+#             ai_text = ai_text.split("```json")[1]  
+#         if "```" in ai_text:
+#             ai_text = ai_text.split("```")[0]  
+
+#         return json.loads(ai_text)
+
+#     except Exception as e:
+#         print(f"Error generating AI recommendation: {e}")
+#         return {"error": str(e)}
+
+
+def generate_ai_recommendation_petrol(user_location, station_data):
+    """Generate AI-powered recommendations for petrol stations, including peak hours, weather, and best refueling times."""
+    try:
+        user_lat, user_lon = user_location
+
+        stations_info = "\n".join([
+            f"""{i+1}. {station['name']}
+            - 📍 Location: {station['latitude']}, {station['longitude']}
+            - 🏠 Address: {station['address']}
+            - 🚶‍♂️ User Distance: {round(haversine_distance(user_lat, user_lon, station['latitude'], station['longitude']), 1)} km
+            - ⛽ Fuel Price: ₹{station['fuel_price_per_litre']} per litre
+            - 🚗 Estimated Travel Time: {round(station['travel_time'] / 60, 1)} min
+            - ⚠️ Peak Hours: {', '.join(station['peak_hours'])}
+            - 🌤 Weather: {station['weather'].get("condition", "N/A")}, 
+              Temp: {station['weather'].get("temperature", "N/A")}°C, 
+              Wind: {station['weather'].get("wind_speed", "N/A")} km/h,
+              Humidity: {station['weather'].get("humidity", "N/A")}%
+            """
+            for i, station in enumerate(station_data)
+        ])
+
+        prompt = f"""
+        Given real-time petrol station data and the user's location at ({user_lat}, {user_lon}),
+        recommend the three best petrol stations for refueling.
+
+        - ✅ Prioritize cost-effectiveness, shortest travel time, and availability.
+        - ❌ Avoid recommending stations with long wait times or extreme congestion.
+        - ⚠️ Consider fuel price, weather conditions, peak hours, distance, and travel time.
+        - ⏳ Identify the **best time to refuel** based on demand fluctuations and fuel price variations.
+
+        📊 Petrol Stations Data:
+        {stations_info}
+
+        **Return ONLY valid JSON** (no explanations) in this format:
+        ```json
+        {{
+          "recommendation": {{
+            "top_3_stations": [
+              {{
+                "name": "<Best station>",
+                "location": "<Latitude, Longitude>",
+                "address": "<Station Address>",
+                "user_distance_km": <Distance>,
+                "fuel_price_per_litre": <Price>,
+                "estimated_travel_time_min": <Time>
+              }},
+              {{
+                "name": "<Second best station>",
+                "location": "<Latitude, Longitude>",
+                "address": "<Station Address>",
+                "user_distance_km": <Distance>,
+                "fuel_price_per_litre": <Price>,
+                "estimated_travel_time_min": <Time>
+              }},
+              {{
+                "name": "<Third best station>",
+                "location": "<Latitude, Longitude>",
+                "address": "<Station Address>",
+                "user_distance_km": <Distance>,
+                "fuel_price_per_litre": <Price>,
+                "estimated_travel_time_min": <Time>
+              }}
+            ],
+            "best_time_to_refuel": "<Best overall time range>",  // Example: "7:00 AM - 9:00 AM"
+            "peak_hours": [<List of peak hours>],  // Example: ["8:00 AM", "6:00 PM"]
+            "weather": {{
+              "condition": "<Weather condition>",  // Example: "Sunny"
+              "temperature": <Temperature>,  // Example: 32.5
+              "wind_speed": <Wind speed>,  // Example: 10.4
+              "humidity": <Humidity>  // Example: 65
+            }},
+            "important_note": "<Key considerations>"
+          }}
+        }}
+        ```
+        """
+
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        ai_text = response.text.strip()
+
+        # Extract JSON safely
+        if "```json" in ai_text:
+            ai_text = ai_text.split("```json")[1]  
+        if "```" in ai_text:
+            ai_text = ai_text.split("```")[0]  
+
+        return json.loads(ai_text)
+
+    except Exception as e:
+        print(f"Error generating AI recommendation: {e}")
+        return {"error": str(e)}
+
 
 def generate_ai_recommendation(user_location, station_data):
     """Use Google Generative AI to generate recommendations in JSON format, including user location."""
@@ -195,74 +371,87 @@ def analyze_best_times(latitude, longitude, station_location):
     peak_hours = [t[0] for t in sorted_times[-3:]]  # Worst 3 times as peak hours
     return best_time, peak_hours
 
-def predict_best_station(latitude, longitude):
-    """Find and recommend the best EV charging station dynamically."""
-    try:
-        places_result = gmaps.places_nearby(
-            location=(latitude, longitude),
-            radius=5000,
-            keyword="EV charging station",
-            type="point_of_interest"
-        )
-        if not places_result.get("results"):
-            return None, "No charging stations found nearby"
+# def predict_best_station(latitude, longitude):
+#     """Find and recommend the best EV charging station dynamically."""
+#     try:
+#         places_result = gmaps.places_nearby(
+#             location=(latitude, longitude),
+#             radius=5000,
+#             keyword="EV charging station",
+#             type="point_of_interest"
+#         )
+#         if not places_result.get("results"):
+#             return None, "No charging stations found nearby"
         
 
         
-        station_data = []
-        for place in places_result["results"]:
-            lat, lon = place["geometry"]["location"].values()
-            travel_time = get_traffic_time((latitude, longitude), (lat, lon)) or float('inf')
-            weather = get_weather_conditions(lat, lon) or {}
-            best_time, peak_hours = analyze_best_times(latitude, longitude, (lat, lon))
-            address = place.get("vicinity", None)  # Directly from API (faster)
-            if not address:
-                reverse_geocode = gmaps.reverse_geocode((lat, lon))
-                address = reverse_geocode[0]["formatted_address"] if reverse_geocode else "Address not found"
-            station_data.append({
-                "station_id": place.get("place_id", "Unknown ID"),
-                "name": place.get("name", "Unknown Name"),
-                "latitude": lat,
-                "longitude": lon,
-                "travel_time": travel_time,
-                "weather": weather,
-                "address": address,
-                # "slots_available": 3,  # Placeholder
-                "price_per_kwh": round(7.5 + 1.5 * (travel_time / 600), 2),
-                "is_green_energy": bool(place.get("business_status") == "OPERATIONAL"),
-                "best_time": best_time,
-                "peak_hours": peak_hours
-            })
+#         station_data = []
+#         for place in places_result["results"]:
+#             lat, lon = place["geometry"]["location"].values()
+#             travel_time = get_traffic_time((latitude, longitude), (lat, lon)) or float('inf')
+#             weather = get_weather_conditions(lat, lon) or {}
+#             best_time, peak_hours = analyze_best_times(latitude, longitude, (lat, lon))
+#             address = place.get("vicinity", None)  # Directly from API (faster)
+#             if not address:
+#                 reverse_geocode = gmaps.reverse_geocode((lat, lon))
+#                 address = reverse_geocode[0]["formatted_address"] if reverse_geocode else "Address not found"
+#             station_data.append({
+#                 "station_id": place.get("place_id", "Unknown ID"),
+#                 "name": place.get("name", "Unknown Name"),
+#                 "latitude": lat,
+#                 "longitude": lon,
+#                 "travel_time": travel_time,
+#                 "weather": weather,
+#                 "address": address,
+#                 # "slots_available": 3,  # Placeholder
+#                 "price_per_kwh": round(7.5 + 1.5 * (travel_time / 600), 2),
+#                 "is_green_energy": bool(place.get("business_status") == "OPERATIONAL"),
+#                 "best_time": best_time,
+#                 "peak_hours": peak_hours
+#             })
         
-        # Sort stations based on travel time
-        station_data.sort(key=lambda x: x["travel_time"])
+#         # Sort stations based on travel time
+#         station_data.sort(key=lambda x: x["travel_time"])
         
-        # Generate AI recommendation based on station data
-        ai_recommendation = generate_ai_recommendation((latitude, longitude), station_data)
+#         # Generate AI recommendation based on station data
+#         ai_recommendation = generate_ai_recommendation((latitude, longitude), station_data)
         
-        best_station = station_data[0]
-        alternative_station = station_data[1] if len(station_data) > 1 else None
+#         best_station = station_data[0]
+#         alternative_station = station_data[1] if len(station_data) > 1 else None
         
-        return {
-            "charging_station": {
-                "name": best_station["name"],
-                "location": f"{best_station['latitude']}, {best_station['longitude']}",
-                # "slots_available": best_station["slots_available"],
-                "price_per_kwh": best_station["price_per_kwh"],
-                "address": best_station["address"],
-                "is_green_energy": best_station["is_green_energy"]
-            },
-            "ai_recommendation": ai_recommendation,
-            "alternative_station": {
-                "name": alternative_station["name"],
-                "distance_km": round(alternative_station["travel_time"] / 60, 1),
-                "address": alternative_station["address"],
-                "price_per_kwh": alternative_station["price_per_kwh"]
-            } if alternative_station else None
-        }, None
-    except Exception as e:
-        print(f"Error fetching station data: {e}")
-        return None, "Error fetching station data"
+#         return {
+#             "charging_station": {
+#                 "name": best_station["name"],
+#                 "location": f"{best_station['latitude']}, {best_station['longitude']}",
+#                 # "slots_available": best_station["slots_available"],
+#                 "price_per_kwh": best_station["price_per_kwh"],
+#                 "address": best_station["address"],
+#                 "is_green_energy": best_station["is_green_energy"]
+#             },
+#             "ai_recommendation": ai_recommendation,
+#             "alternative_station": {
+#                 "name": alternative_station["name"],
+#                 "distance_km": round(alternative_station["travel_time"] / 60, 1),
+#                 "address": alternative_station["address"],
+#                 "price_per_kwh": alternative_station["price_per_kwh"]
+#             } if alternative_station else None
+#         }, None
+#     except Exception as e:
+#         print(f"Error fetching station data: {e}")
+#         return None, "Error fetching station data"
+
+# @app.route("/api/allocate-charging", methods=["POST"])
+# def allocate_charging_slot():
+#     """API to allocate an EV charging slot."""
+#     data = request.json
+#     latitude = data.get("latitude")
+#     longitude = data.get("longitude")
+#     if latitude is None or longitude is None:
+#         return jsonify({"error": "Missing latitude or longitude"}), 400
+#     result, error = predict_best_station(latitude, longitude)
+#     if error:
+#         return jsonify({"error": error}), 400
+#     return jsonify(result)
 
 @app.route("/api/allocate-charging", methods=["POST"])
 def allocate_charging_slot():
@@ -272,10 +461,94 @@ def allocate_charging_slot():
     longitude = data.get("longitude")
     if latitude is None or longitude is None:
         return jsonify({"error": "Missing latitude or longitude"}), 400
-    result, error = predict_best_station(latitude, longitude)
+
+    result, error = predict_best_station(latitude, longitude, "EV charging station", generate_ai_recommendation, "price_per_kwh")
     if error:
         return jsonify({"error": error}), 400
     return jsonify(result)
+
+
+@app.route("/api/allocate-fuel", methods=["POST"])
+def allocate_fuel_station():
+    """API to find the best petrol station."""
+    data = request.json
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+    if latitude is None or longitude is None:
+        return jsonify({"error": "Missing latitude or longitude"}), 400
+
+    result, error = predict_best_station(latitude, longitude, "petrol station", generate_ai_recommendation_petrol, "fuel_price_per_litre")
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify(result)
+
+
+def predict_best_station(latitude, longitude, search_keyword, ai_recommendation_function, price_key):
+    """Common function to find and recommend the best EV or Petrol station dynamically."""
+    try:
+        places_result = gmaps.places_nearby(
+            location=(latitude, longitude),
+            radius=5000,
+            keyword=search_keyword,
+            type="point_of_interest"
+        )
+        if not places_result.get("results"):
+            return None, f"No {search_keyword} found nearby"
+
+        station_data = []
+        for place in places_result["results"]:
+            lat, lon = place["geometry"]["location"].values()
+            travel_time = get_traffic_time((latitude, longitude), (lat, lon)) or float('inf')
+            weather = get_weather_conditions(lat, lon) or {}
+            best_time, peak_hours = analyze_best_times(latitude, longitude, (lat, lon))
+            address = place.get("vicinity", None)
+            if not address:
+                reverse_geocode = gmaps.reverse_geocode((lat, lon))
+                address = reverse_geocode[0]["formatted_address"] if reverse_geocode else "Address not found"
+
+            station_info = {
+                "station_id": place.get("place_id", "Unknown ID"),
+                "name": place.get("name", "Unknown Name"),
+                "latitude": lat,
+                "longitude": lon,
+                "travel_time": travel_time,
+                "weather": weather,
+                "address": address,
+                price_key: round(7.5 + 1.5 * (travel_time / 600), 2) if price_key == "price_per_kwh" else round(100 + 2 * (travel_time / 600), 2),
+                "best_time": best_time,
+                "peak_hours": peak_hours
+            }
+
+            if price_key == "price_per_kwh":
+                station_info["is_green_energy"] = bool(place.get("business_status") == "OPERATIONAL")
+
+            station_data.append(station_info)
+
+        station_data.sort(key=lambda x: x["travel_time"])
+        ai_recommendation = ai_recommendation_function((latitude, longitude), station_data)
+
+        best_station = station_data[0]
+        alternative_station = station_data[1] if len(station_data) > 1 else None
+
+        return {
+            "station": {
+                "name": best_station["name"],
+                "location": f"{best_station['latitude']}, {best_station['longitude']}",
+                price_key: best_station[price_key],
+                "address": best_station["address"]
+            },
+            "ai_recommendation": ai_recommendation,
+            "alternative_station": {
+                "name": alternative_station["name"],
+                "distance_km": round(alternative_station["travel_time"] / 60, 1),
+                "address": alternative_station["address"],
+                price_key: alternative_station[price_key]
+            } if alternative_station else None
+        }, None
+    except Exception as e:
+        print(f"Error fetching station data: {e}")
+        return None, "Error fetching station data"
+
 
 if __name__ == '__main__':
     app.run(debug=True)
